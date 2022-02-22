@@ -50,6 +50,7 @@ public class CombatScript : MonoBehaviour
     //Enemy Layers
     [SerializeField]
     private LayerMask enemyLayers;
+    private bool changeEnemyDirection;
 
     //Damage
     public bool isReceivingAirDamage = false;
@@ -100,8 +101,16 @@ public class CombatScript : MonoBehaviour
                     Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(swordAttackPoint.position, swordAttackRange, enemyLayers);
                     foreach (Collider2D enemy in hitEnemies)
                     {
+                        if (hitEnemies.GetType() == typeof(CapsuleCollider2D))
+                        {
+                            changeEnemyDirection = true;
+                        }
+                        else
+                        {
+                            changeEnemyDirection = false;
+                        }
                         //if an enemy is found, call the function that damage it
-                        enemy.GetComponent<EnemyScript>().TakeDamage(swordDamage, transform.position);
+                        enemy.GetComponent<EnemyScript>().TakeDamage(swordDamage, transform.position, changeEnemyDirection);
                     }
 
                     //Animations
@@ -206,7 +215,6 @@ public class CombatScript : MonoBehaviour
                 }
                 else
                 {
-                    Debug.Log("Damage from down");
                     playerAnimator.SetBool("IsJumping", false);
                     isReceivingAirDamage = true;
                     playerAnimator.SetTrigger("HitFromBottom");

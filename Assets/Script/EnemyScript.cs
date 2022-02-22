@@ -12,7 +12,7 @@ public class EnemyScript : MonoBehaviour
     private SpriteRenderer enemySprite;
 
     private Rigidbody2D enemyRb;
-    private float knockbackStrength = 30f;
+    private float knockbackStrength = 50f;
 
     [SerializeField]
     private GameObject deathEffect;
@@ -30,7 +30,7 @@ public class EnemyScript : MonoBehaviour
         enemySprite = GetComponent<SpriteRenderer>();
     }
 
-    public void TakeDamage(int damage, Vector3 playerPosition)
+    public void TakeDamage(int damage, Vector3 playerPosition, bool changeDirection)
     {
         currentHealth -= damage;
 
@@ -38,7 +38,13 @@ public class EnemyScript : MonoBehaviour
 
         enemyRb.AddForce(hitDirection * knockbackStrength, ForceMode2D.Impulse);
 
+        if (changeDirection == true)
+        {
+            GetComponent<EnemyMovimentScript>().ChangeDirection();
+        }
+        
 
+        Debug.Log("Currente health is: " + currentHealth);
 
         enemySprite.color = Color.red;
         StartCoroutine(HitEffect());
