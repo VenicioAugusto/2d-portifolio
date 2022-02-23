@@ -13,8 +13,6 @@ public class PlayerMovimentScript : MonoBehaviour
     private Animator playerAnimator;
     private Rigidbody2D m_Rigidbody2;
 
-    private SpriteRenderer playerSprite;
-
     private float horizontal = 0f;
 
     [SerializeField]
@@ -39,8 +37,7 @@ public class PlayerMovimentScript : MonoBehaviour
 
     private void Awake()
     {
-        m_Rigidbody2 = GetComponent<Rigidbody2D>();
-        playerSprite = GetComponent<SpriteRenderer>();
+        m_Rigidbody2 = GetComponent<Rigidbody2D>();        
     }
     private void FixedUpdate()
     {
@@ -194,8 +191,7 @@ public class PlayerMovimentScript : MonoBehaviour
         //... if the something is an enemy
         if(collision.gameObject.tag == "Enemy")
         {
-            playerSprite.color = Color.red;
-            StartCoroutine(HitEffect());
+            
 
             Vector2 hitDirection = transform.position - collision.gameObject.transform.position;
 
@@ -211,11 +207,5 @@ public class PlayerMovimentScript : MonoBehaviour
             //GetComponent<CombatScript>().GiveHealth(healthGain);
         }
 
-    }
-
-    IEnumerator HitEffect()
-    {
-        yield return new WaitForSeconds(.2f);
-        playerSprite.color = Color.white;
-    }
+    }    
 }

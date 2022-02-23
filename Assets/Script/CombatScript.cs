@@ -5,9 +5,13 @@ using UnityEngine.InputSystem;
 
 public class CombatScript : MonoBehaviour
 {
+    //Health
     [SerializeField]
     private int maxHealth = 5;
     private int currentHealth;
+    [SerializeField]
+    private HealthBarScript healthBar;
+    private SpriteRenderer playerSprite;
 
     [SerializeField]
     private CharacterController2D controller;
@@ -60,10 +64,13 @@ public class CombatScript : MonoBehaviour
 
     private void Start()
     {
+        playerSprite = GetComponent<SpriteRenderer>();
+
         currentHealth = maxHealth;
+        healthBar.SetMaxHealth(maxHealth);
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         if(isImmune > 0)
         {
@@ -101,7 +108,7 @@ public class CombatScript : MonoBehaviour
                     Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(swordAttackPoint.position, swordAttackRange, enemyLayers);
                     foreach (Collider2D enemy in hitEnemies)
                     {
-                        if (hitEnemies.GetType() == typeof(CapsuleCollider2D))
+                        if (enemy.name == "EnemyBack")
                         {
                             changeEnemyDirection = true;
                         }
@@ -110,7 +117,7 @@ public class CombatScript : MonoBehaviour
                             changeEnemyDirection = false;
                         }
                         //if an enemy is found, call the function that damage it
-                        enemy.GetComponent<EnemyScript>().TakeDamage(swordDamage, transform.position, changeEnemyDirection);
+                        enemy.GetComponentInParent<EnemyScript>().TakeDamage(swordDamage, transform.position, changeEnemyDirection);
                     }
 
                     //Animations
@@ -150,7 +157,7 @@ public class CombatScript : MonoBehaviour
         //Enable the weapon if the player is grounded
         if (context.performed)
         {
-            if (controller.m_Grounded)
+            if (controller.m_Grounded && !playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("Player_SwordAttack"))
             {
                 ActivateWeapon();
                 isHoldingWeapon = true;
@@ -173,9 +180,11 @@ public class CombatScript : MonoBehaviour
     //Activate the weapon
     public void ActivateWeapon()
     {
-            gun.SetActive(true);
-            gunArm.SetActive(true);
-            playerAnimator.SetBool("GunAttack", true);
+        
+        gun.SetActive(true);
+        gunArm.SetActive(true);
+        playerAnimator.SetBool("GunAttack", true);
+                 
     }
 
     //Is holding gun check variable
@@ -195,19 +204,32 @@ public class CombatScript : MonoBehaviour
         isAirAttacking = false;
         sword.SetActive(false);
         swordArm.SetActive(false);
+        if (isHoldingWeapon)
+        {
+            ActivateWeapon();
+        }
     }
 
     //To be called when the player takes damage
     public void TakeHealth(int damageTaken)
     {
-        
-        
+        //Checks if the player has more than 0 health        
         if(currentHealth > 0)
         {
+            //Check if the player isnt in the immune window
             if (isImmune <= 0)
             {
+                
                 Debug.Log("Current health is: " + currentHealth);
+
+                //Take health based on the damage taken
                 currentHealth -= damageTaken;
+
+                //Change player color to red when it is hit, then change it back to white.
+                playerSprite.color = Color.red;
+                StartCoroutine(HitEffect());
+
+                //Reset the immune time
                 isImmune = immunedTime;
                 if (controller.m_Grounded)
                 {
@@ -219,10 +241,11 @@ public class CombatScript : MonoBehaviour
                     isReceivingAirDamage = true;
                     playerAnimator.SetTrigger("HitFromBottom");
                 }
+                healthBar.SetHealth(currentHealth);
             }            
         }
-            
-        if(currentHealth == 0)
+        //Called if the player health is 0 or below
+        if(currentHealth <= 0)
         {
             Debug.Log("Player is Dead");
             playerAnimator.SetBool("IsDead", true);
@@ -240,5 +263,12 @@ public class CombatScript : MonoBehaviour
     public void ResetHealth()
     {
         currentHealth = maxHealth;
+    }
+
+    //Execute the damage effect
+    IEnumerator HitEffect()
+    {
+        yield return new WaitForSeconds(.2f);
+        playerSprite.color = Color.white;
     }
 }
