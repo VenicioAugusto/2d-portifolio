@@ -29,22 +29,29 @@ public class PlayerMovimentScript : MonoBehaviour
     private bool hasDoubleJump = false;
     private bool runAnimationCheck = false;
 
-    //Is holding a weapon
-    private bool isHoldingWeapon = false;
-
     //Damage related
     private float knockbackStrength = 20f;
+    private bool canBeHited;
+    private float isImmuneMs;
 
     private void Awake()
     {
-        m_Rigidbody2 = GetComponent<Rigidbody2D>();        
+        m_Rigidbody2 = GetComponent<Rigidbody2D>();
+
+        //Get the immune time from the combat script
+        isImmuneMs = GetComponent<CombatScript>().isImmune;
     }
+
     private void FixedUpdate()
     {
-        isHoldingWeapon = GetComponent<CombatScript>().IsHoldingGun();
+        //Let the player be hited if the immune time has pass
+        if (isImmuneMs <= 0)
+        {
+            canBeHited = true;
+        }
 
         Animations();
-        if (isHoldingWeapon && controller.m_Grounded)
+        if (GetComponent<CombatScript>().isHoldingWeapon && controller.m_Grounded)
         {
             controller.Move(horizontal * 0 * Time.fixedDeltaTime, crouch, jump, hasDoubleJump);
             //player is facing left...
@@ -174,7 +181,7 @@ public class PlayerMovimentScript : MonoBehaviour
             OnCrouching(isCrouching);
         }
         //Called when the player hit the ground if the player hold the "Hold weapon button" in the air
-        if (isHoldingWeapon)
+        if (GetComponent<CombatScript>().isHoldingWeapon)
         {
             GetComponent<CombatScript>().ActivateWeapon();
         }
@@ -192,10 +199,16 @@ public class PlayerMovimentScript : MonoBehaviour
         if(collision.gameObject.tag == "Enemy")
         {
             
+            if (canBeHited)
+            {
+                //The direction of the hit
+                Vector2 hitDirection = transform.position - collision.gameObject.transform.position;
 
-            Vector2 hitDirection = transform.position - collision.gameObject.transform.position;
+                //Apply the knockback based on the direction it was hited
+                m_Rigidbody2.AddForce(hitDirection * knockbackStrength, ForceMode2D.Impulse);
+            }
+            canBeHited = false;
 
-            m_Rigidbody2.AddForce(hitDirection * knockbackStrength, ForceMode2D.Impulse);
 
             int damageReceived = collision.gameObject.GetComponent<EnemyScript>().damageDone;
             GetComponent<CombatScript>().TakeHealth(damageReceived);            

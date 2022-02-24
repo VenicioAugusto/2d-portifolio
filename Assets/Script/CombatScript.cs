@@ -42,7 +42,7 @@ public class CombatScript : MonoBehaviour
     private GameObject gun;
     [SerializeField]
     private GameObject gunArm;
-    private bool isHoldingWeapon = false;
+    public bool isHoldingWeapon = false;
 
 
     //Attack rate
@@ -60,7 +60,7 @@ public class CombatScript : MonoBehaviour
     public bool isReceivingAirDamage = false;
     [SerializeField]
     private float immunedTime = 2f;
-    private float isImmune = 0f;
+    public float isImmune = 0f;
 
     private void Start()
     {
@@ -72,18 +72,23 @@ public class CombatScript : MonoBehaviour
 
     private void FixedUpdate()
     {
+        //Reset the immune time
         if(isImmune > 0)
         {
             isImmune -= Time.deltaTime;
         }
-
+        //Dont let the player hold the weapon if falling
         if (GetComponent<PlayerMovimentScript>().isFalling == true)
         {
             gun.SetActive(false);
             gunArm.SetActive(false);
             playerAnimator.SetBool("GunAttack", false);
         }
-        
+        //Activate the weapon if on the ground and if attacking, only after the attack
+        if (isHoldingWeapon && controller.m_Grounded && !playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("Player_SwordAttack"))
+        {
+            ActivateWeapon();
+        }
     }
 
 
@@ -92,9 +97,9 @@ public class CombatScript : MonoBehaviour
     {
 
         if (context.performed)
-        {            
+        {
             if (Time.time >= nextAttackTime)
-            {
+            {                
                 //Attack Rate
                 nextAttackTime = Time.time + 1f / attackRate;
 
@@ -105,10 +110,10 @@ public class CombatScript : MonoBehaviour
                 else
                 {
                     //Enemy Identifier
-                    Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(swordAttackPoint.position, swordAttackRange, enemyLayers);
-                    foreach (Collider2D enemy in hitEnemies)
+                    Collider2D hitEnemies = Physics2D.OverlapCircle(swordAttackPoint.position, swordAttackRange, enemyLayers);
+                    if(hitEnemies != null)
                     {
-                        if (enemy.name == "EnemyBack")
+                        if (hitEnemies.name == "EnemyBack")
                         {
                             changeEnemyDirection = true;
                         }
@@ -116,9 +121,13 @@ public class CombatScript : MonoBehaviour
                         {
                             changeEnemyDirection = false;
                         }
+                        Debug.Log(hitEnemies.name);
+                        Debug.Log(changeEnemyDirection);
                         //if an enemy is found, call the function that damage it
-                        enemy.GetComponentInParent<EnemyScript>().TakeDamage(swordDamage, transform.position, changeEnemyDirection);
+                        hitEnemies.GetComponentInParent<EnemyScript>().TakeDamage(swordDamage, transform.position, changeEnemyDirection);
                     }
+                    
+                    
 
                     //Animations
                     //Air sword attack if the player is not grounded
@@ -179,12 +188,10 @@ public class CombatScript : MonoBehaviour
 
     //Activate the weapon
     public void ActivateWeapon()
-    {
-        
+    {        
         gun.SetActive(true);
         gunArm.SetActive(true);
         playerAnimator.SetBool("GunAttack", true);
-                 
     }
 
     //Is holding gun check variable
@@ -204,10 +211,6 @@ public class CombatScript : MonoBehaviour
         isAirAttacking = false;
         sword.SetActive(false);
         swordArm.SetActive(false);
-        if (isHoldingWeapon)
-        {
-            ActivateWeapon();
-        }
     }
 
     //To be called when the player takes damage
